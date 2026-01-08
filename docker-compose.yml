@@ -1,0 +1,52 @@
+name: "meeting-room-services"
+
+networks:
+  meeting_network:
+    driver: bridge
+
+services:
+  api:
+    container_name: ${API_CONTAINER}
+    image: ${API_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=python:3.11-slim
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DEBUG=${DEBUG}
+      - PYTHONPATH=/app
+    volumes:
+      - ./:/app
+      - ./logs:/app/logs
+    ports:
+      - ${API_PORT}:8000
+    networks:
+      - meeting_network
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  db:
+    container_name: ${DB_CONTAINER_NAME}
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./db/postgresql:/var/lib/postgresql/data/
+    ports:
+      - ${DB_PORT}:5432
+    networks:
+      - meeting_network
